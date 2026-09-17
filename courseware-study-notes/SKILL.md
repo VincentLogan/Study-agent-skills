@@ -31,6 +31,13 @@ Run `scripts/extract_pptx.py` to extract titles, text blocks, tables, speaker no
 
 `python-pptx` cannot read binary `.ppt` files. For an old PowerPoint file, first use `scripts/convert_legacy_ppt.py` to make a local `.pptx` copy through LibreOffice, then follow the PPTX route. Preserve the original file and record the converted copy as a processing artifact; do not overwrite the source. If LibreOffice is unavailable or conversion fails, explain the blocker instead of treating the `.ppt` as a PPTX.
 
+Use a conservative, text-first workflow for converted legacy decks:
+
+- Do not render or page-by-page compare the converted deck by default. Extracted text, titles, notes, positions, and shape metadata are the primary evidence.
+- Render/inspect a page only when the text layer omits a claim, formula, or relationship that is essential to the note and cannot be recovered from source text or existing knowledge of the notation. Prefer the smallest number of pages; as a default cap, inspect no more than three pages per deck.
+- Never use image inspection to audit diagrams, animation frames, decorative labels, or content that is already readable in the text extraction.
+- If a visual-only item remains unclear, do not reconstruct it. Record the slide number, what is missing, and a practical manual check in the final `待核对` section.
+
 ### PDF
 
 Run `scripts/extract_pdf.py` first. It classifies pages as `text-led`, `mixed`, or `image-led` from native text and page content.
