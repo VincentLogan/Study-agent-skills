@@ -13,27 +13,31 @@ Use this schema for the final Markdown file. Adapt headings to the source, but p
 
 - <前置概念> → <核心机制> → <证明/算法> → <结论或应用>
 
-## 1. <章节或小节标题> [S1–S4 / P1–P4]
+## 1. <父章节标题> [S1–S18 / P1–P18]
+
+<直接陈述本章引入、建立或实现的内容。例如：引入平衡因子（Balance Factor, BF），以确保二叉搜索树（Binary Search Tree, BST）的树结构保持平衡。>
+
+### 1.1 <子主题> [S1–S4 / P1–P4]
 
 **重要性：A · 必须掌握**
-
-### 这一节要解决什么
-
-<问题、动机、目标。>
 
 ### 核心概念
 
 <定义、条件、符号和公式。>
 
-### 核心原理解析
+### 核心原理
 
-<结论是什么、为何可能成立、准备走哪条证明/解题路线，以及一句可记忆的结论。>
+> <从什么前提出发，利用什么机制说明/证明什么。这里是一句无标题的注释行，不使用“问题”标题。>
+
+<结论、成立条件/不变量/机制，以及证明或解题路线。>
 
 ### 详细证明 / 推导 / 机制
 
 1. <前提与记号>
 2. <步骤及其依据>
 3. <结论>
+
+> **补充推导：** <仅当资料省略了理解或证明闭合所必需的中间步骤时使用；说明补充步骤及其依据，不把它写成资料的原话。>
 
 ### 原课件例子
 
@@ -60,7 +64,7 @@ Use this schema for the final Markdown file. Adapt headings to the source, but p
 
 ## 术语速查
 
-| 术语 | 一句话解释 | 来源 |
+| 术语 | 概念 | 来源 |
 |---|---|---|
 
 ## 待核对
@@ -69,3 +73,5 @@ Use this schema for the final Markdown file. Adapt headings to the source, but p
 ```
 
 Use `$...$` for inline math and `$$...$$` for standalone expressions. HTML/CSS is a nonessential enhancement only: do not hide source facts, proof steps, or warnings inside a renderer-specific feature.
+
+Use parent and child headings only when they match a continuous source-order concept grouping. Important technical terms use `中文（English, Abbreviation）` on first meaningful occurrence when a reliable English original exists. Write the note as direct statements of knowledge, not as a report of what the courseware said.
