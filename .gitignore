@@ -3,3 +3,14 @@ __pycache__/
 .DS_Store
 .venv/
 test-output/
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.log
+.vscode/
+test_data/
+*.ppt
+*.pptx
+*.pdf

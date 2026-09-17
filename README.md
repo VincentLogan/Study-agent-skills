@@ -2,6 +2,8 @@
 
 个人维护的可移植 AI Skills 仓库，面向支持 `SKILL.md` 的客户端使用。每个 Skill 都将提示规范、可选脚本和参考模板打包在同一目录中，以便导入、版本管理和复用。
 
+本仓库采用 [MIT License](./LICENSE)，欢迎通过 [Issues](../../issues) 反馈问题和提出建议，并通过 [Pull Requests](../../pulls) 贡献改进。贡献要求见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+
 ## 当前 Skills
 
 | Skill | 用途 | 目录 | 下载 |
@@ -35,4 +37,4 @@
 
 ## 版本与发布
 
-每次稳定更新会同时提交源码与 `dist/` 中的 ZIP 包。GitHub 仓库创建并连接后，本 README 的相对链接会自动成为对应目录入口和下载入口。
+每次稳定更新会同时提交源码与 `dist/` 中的 ZIP 包。GitHub 上的相对链接会自动成为对应目录入口和下载入口。
