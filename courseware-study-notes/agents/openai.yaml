@@ -1,6 +1,6 @@
 interface:
   display_name: "Courseware Study Notes"
-  short_description: "Generate structured study notes from PPTX or PDF courseware"
+  short_description: "Generate structured study notes from PPT, PPTX, or PDF courseware"
   brand_color: "#315C86"
   default_prompt: "Use $courseware-study-notes to turn this courseware into a structured study note."
 policy:

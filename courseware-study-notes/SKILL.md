@@ -1,13 +1,13 @@
 ---
 name: courseware-study-notes
-description: Read PPTX or PDF courseware and write source-ordered Markdown study notes with proof explanations, examples, and revision aids. Use for lecture slides, scanned lecture PDFs, and technical course handouts.
+description: Read PPT, PPTX, or PDF courseware and write source-ordered Markdown study notes with proof explanations, examples, and revision aids. Use for lecture slides, scanned lecture PDFs, and technical course handouts.
 metadata:
-  short-description: Create study notes from PPTX or PDF courseware
+short-description: Create study notes from PPT, PPTX, or PDF courseware
 ---
 
 # Courseware Study Notes
 
-Create a complete, accurate study note from a PPTX or PDF. Use this skill when the requested outcome is a local Markdown lecture note, not a slide conversion or a short chat summary.
+Create a complete, accurate study note from a PPT, PPTX, or PDF. Use this skill when the requested outcome is a local Markdown lecture note, not a slide conversion or a short chat summary.
 
 ## Outcome and boundaries
 
@@ -19,32 +19,55 @@ Create a complete, accurate study note from a PPTX or PDF. Use this skill when t
 
 ## Select the extraction route
 
+### Default: text coverage before visual evidence
+
+The goal is a complete source-ordered **knowledge outline**, not a visual transcription of every slide. Use native text as the primary evidence and complete coverage mechanism. Do not visually inspect a page or slide during the first pass.
+
+1. Run the relevant extractor with `--mode index` for the entire source. Its output is a compact course map: page/slide number, title candidate, native text, notes, and visual-risk indicators.
+2. Build the course map and draft the knowledge outline from that text in continuous source order. A `mixed`, `image-led`, or high `non_text_shape_count` classification is only a risk indicator; it is **not** permission to perform visual analysis.
+3. Treat missing minor labels, decorative diagrams, animation states, layout polish, and an occasionally unclear sentence as non-blocking. Summarize the readable rule or conclusion; otherwise add `[待核对 S<n>/P<n>]`. Do not use visual analysis to make the note more exhaustive.
+4. A visual check is allowed only when the text record has a **serious, material gap**: (a) a substantive page/slide has no usable native text or notes; (b) a key definition, formula, table, algorithm step, or conclusion is explicitly referenced by surrounding text but is absent from the extraction; or (c) a continuous run of content pages is effectively textless and cannot honestly be represented in the note. Record the specific gap and the intended knowledge point before reading the visual.
+5. Read only the smallest affected page/slide set. Never re-read a whole deck/PDF, a chapter, or every `mixed`/`image-led` item merely to improve completeness. If the source is predominantly scanned or visual-only, state that full text-faithful coverage requires a separate visual pass and ask before starting one; otherwise leave scoped `待核对` items.
+
 ### PPTX
 
-Run `scripts/extract_pptx.py` to extract titles, text blocks, tables, speaker notes, positions, font sizes, and paragraph levels into JSON. Treat slide order as canonical; use coordinates and title hierarchy to repair text-box ordering when needed.
+Run `scripts/extract_pptx.py --mode index` to obtain titles, ordered native text, and speaker notes. Treat slide order as canonical. The index intentionally omits coordinates, font runs, and paragraph metadata to keep context small.
 
 - Retain titles, definitions, formulas, proof text, pseudocode, warnings, captions, and explanatory sentences.
 - Ignore animation frames, decorative labels, isolated tree-node values, and diagram-only symbols unless they express a rule or conclusion essential to the prose.
-- If native extraction omits material needed for a conclusion, add `[待核对 S<n>]` rather than guessing.
+- Do not use a slide's non-text shape count as a visual-reading trigger. If native extraction omits material needed for a conclusion, add `[待核对 S<n>]` unless it meets the serious-gap gate above.
+- Request the full extractor output only when reading order or heading hierarchy cannot be resolved from the index. Do not use full metadata as a substitute for a visual audit.
 
 ### Legacy PPT
 
-`python-pptx` cannot read binary `.ppt` files. For an old PowerPoint file, first use `scripts/convert_legacy_ppt.py` to make a local `.pptx` copy through LibreOffice, then follow the PPTX route. Preserve the original file and record the converted copy as a processing artifact; do not overwrite the source. If LibreOffice is unavailable or conversion fails, explain the blocker instead of treating the `.ppt` as a PPTX.
+Binary `.ppt` is not a ZIP/XML `.pptx` file and must never be sent to `python-pptx`. Use the bundled single-command wrapper instead of manually converting and then extracting:
+
+```bash
+python3 scripts/extract_legacy_ppt.py \
+  --input <source.ppt> \
+  --output <course-map.json> \
+  --cache-dir <source-folder>/.courseware-cache \
+  --mode index
+```
+
+The wrapper is the default and only normal `.ppt` route. It uses bundled `convert_legacy_ppt.py` to locate LibreOffice/`soffice`, creates an isolated temporary LibreOffice profile, converts into a hash-keyed cached `.pptx`, then calls the bundled PPTX extractor. This is the most efficient robust path: LibreOffice preserves far more slide text, tables, order, and notes than ad-hoc OLE text readers, while the content-hash cache avoids repeat conversions for an unchanged source. The original `.ppt` is never modified; the JSON records the converted artifact and whether the cache was used.
+
+Do not call LibreOffice directly, use an external web converter, or install a separate `.ppt` parser. LibreOffice is the only system dependency; all orchestration and extraction tools are contained in this skill. If it is unavailable or conversion fails, report the blocker instead of treating the source as `.pptx`. Use `--force` only to redo a known-bad cached conversion.
 
 Use a conservative, text-first workflow for converted legacy decks:
 
-- Do not render or page-by-page compare the converted deck by default. Extracted text, titles, notes, positions, and shape metadata are the primary evidence.
-- Render/inspect a page only when the text layer omits a claim, formula, or relationship that is essential to the note and cannot be recovered from source text or existing knowledge of the notation. Prefer the smallest number of pages; as a default cap, inspect no more than three pages per deck.
+- Do not render or page-by-page compare the converted deck by default. The compact extracted text, titles, and notes are the primary evidence.
+- Render/inspect a page only after it passes the serious-gap gate above. Do not inspect a slide because it looks sparse, contains a diagram, or would benefit from a more detailed explanation.
 - Never use image inspection to audit diagrams, animation frames, decorative labels, or content that is already readable in the text extraction.
 - If a visual-only item remains unclear, do not reconstruct it. Record the slide number, what is missing, and a practical manual check in the final `待核对` section.
 
 ### PDF
 
-Run `scripts/extract_pdf.py` first. It classifies pages as `text-led`, `mixed`, or `image-led` from native text and page content.
+Run `scripts/extract_pdf.py --mode index` first. It classifies pages as `text-led`, `mixed`, or `image-led` from native text and page content, but classification is for triage only.
 
 - For `text-led` pages, use extracted text and layout directly.
-- For `mixed` pages, use text first; inspect a figure only when it carries a key claim.
-- For `image-led` pages, render only that page with `scripts/render_pdf_pages.py`, then visually recover the concept, formula, component relationship, or conclusion required for the note. Do not transcribe every label or decorative detail.
+- For `mixed` and `image-led` pages, use extracted text first and do not render by default. A figure is inspected only after the serious-gap gate is met.
+- When a visual check is justified, render only that page with `scripts/render_pdf_pages.py`, then recover just the blocked concept, formula, component relationship, or conclusion. Do not transcribe labels or decorative detail.
 - For computer-systems diagrams, explain components plus the relevant data/control flow, timing relation, bottleneck, invariant, or trade-off—not a literal inventory of every wire or register.
 - Mark unreadable image text as `[待核对 P<n>]`.
 
@@ -52,12 +75,12 @@ Run `scripts/extract_pdf.py` first. It classifies pages as `text-led`, `mixed`, 
 
 Never silently stop at a context limit or discard later pages.
 
-1. Extract lightweight metadata for every page: page number, title candidates, available text, and page classification.
+1. Extract a compact index for every page: page number, title candidates, available text/notes, and page classification. This establishes coverage; do not load full layout JSON for all pages.
 2. Build a course map and split it into **continuous** ranges, preferring chapter boundaries. Keep each range small enough for reliable analysis.
 3. Analyze ranges in page order. For each range, retain a compact working outline containing only its definitions, notation, conclusions, and source references.
 4. Carry forward only the preceding material necessary to understand the next range.
 5. Merge the range outlines into one final note in original order. Its `课件范围` section must list every processed range.
-6. If a range cannot be processed, record it in `待核对` with its page range and the reason; never imply that it was covered.
+6. If a range has a serious text gap that is not visually checked, record it in `待核对` with its page range, missing knowledge point, and reason; never imply that it was covered.
 
 ## Build a source-faithful hierarchy
 

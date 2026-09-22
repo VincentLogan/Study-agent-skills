@@ -55,7 +55,7 @@ def paragraph_data(paragraph: Any) -> dict[str, Any]:
     return {"text": paragraph.text, "level": paragraph.level, "font_size_pt": max(sizes) if sizes else None, "runs": runs}
 
 
-def slide_data(slide: Any, number: int) -> dict[str, Any]:
+def slide_data(slide: Any, number: int, mode: str) -> dict[str, Any]:
     blocks, non_text = [], 0
     for index, shape in enumerate(walk(slide.shapes), 1):
         base = {"shape_index": index, "shape_name": shape.name, "x_in": inches(shape.left), "y_in": inches(shape.top), "width_in": inches(shape.width), "height_in": inches(shape.height)}
@@ -77,18 +77,30 @@ def slide_data(slide: Any, number: int) -> dict[str, Any]:
         notes = (slide.notes_slide.notes_text_frame.text or "").strip()
     except (AttributeError, ValueError):
         notes = ""
-    return {"slide_number": number, "title_candidate": title, "text_blocks": blocks, "speaker_notes": notes, "non_text_shape_count": non_text}
+    native_text = "\n\n".join(block["text"] for block in blocks)
+    index = {
+        "slide_number": number,
+        "title_candidate": title,
+        "native_text": native_text,
+        "native_text_characters": len(native_text),
+        "speaker_notes": notes,
+        "non_text_shape_count": non_text,
+    }
+    if mode == "index":
+        return index
+    return index | {"text_blocks": blocks}
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--mode", choices=("index", "full"), default="full", help="Use index for compact course mapping; full retains layout metadata.")
     args = parser.parse_args()
     if args.input.suffix.lower() != ".pptx" or not args.input.is_file():
         parser.error("--input must name an existing .pptx file")
     deck = Presentation(args.input)
-    data = {"source_file": str(args.input.resolve()), "slide_count": len(deck.slides), "slides": [slide_data(slide, index) for index, slide in enumerate(deck.slides, 1)]}
+    data = {"source_file": str(args.input.resolve()), "mode": args.mode, "slide_count": len(deck.slides), "slides": [slide_data(slide, index, args.mode) for index, slide in enumerate(deck.slides, 1)]}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 

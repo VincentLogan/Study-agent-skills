@@ -49,23 +49,27 @@ def kind(text_length: int, images: int, drawings: int) -> str:
     return "text-led"
 
 
-def page_data(page: Any, number: int) -> dict[str, Any]:
+def page_data(page: Any, number: int, mode: str) -> dict[str, Any]:
     text_blocks = blocks(page)
     text = "\n".join(block["text"] for block in text_blocks)
     image_count, drawing_count = len(page.get_images(full=True)), len(page.get_drawings())
-    return {"page_number": number, "title_candidate": title(page), "text_blocks": text_blocks, "native_text": text, "native_text_characters": len(text), "image_count": image_count, "drawing_count": drawing_count, "classification": kind(len(text), image_count, drawing_count)}
+    index = {"page_number": number, "title_candidate": title(page), "native_text": text, "native_text_characters": len(text), "image_count": image_count, "drawing_count": drawing_count, "classification": kind(len(text), image_count, drawing_count)}
+    if mode == "index":
+        return index
+    return index | {"text_blocks": text_blocks}
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--mode", choices=("index", "full"), default="full", help="Use index for compact course mapping; full retains layout blocks.")
     args = parser.parse_args()
     if args.input.suffix.lower() != ".pdf" or not args.input.is_file():
         parser.error("--input must name an existing .pdf file")
     document = fitz.open(args.input)
     try:
-        data = {"source_file": str(args.input.resolve()), "page_count": document.page_count, "pages": [page_data(page, number) for number, page in enumerate(document, 1)]}
+        data = {"source_file": str(args.input.resolve()), "mode": args.mode, "page_count": document.page_count, "pages": [page_data(page, number, args.mode) for number, page in enumerate(document, 1)]}
     finally:
         document.close()
     args.output.parent.mkdir(parents=True, exist_ok=True)
